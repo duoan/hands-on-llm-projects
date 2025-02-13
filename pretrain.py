@@ -13,6 +13,7 @@ You are free to use any dataset and pre-trained model
 import os
 import torch
 import torch.distributed as dist
+from datetime import datetime, timezone
 from itertools import chain
 from datasets import load_dataset, DatasetDict
 import wandb
@@ -25,15 +26,16 @@ from transformers import (
     TrainingArguments,
 )
 
-dataset_path = "roneneldan/TinyStories"
-model_path = "roneneldan/TinyStories-1M"
-output_path = f"results/{model_path}/pt"
-tokenized_datapath = os.path.join("data", dataset_path, "tokenized_dataset")
-
-os.makedirs(output_path, exist_ok=True)
-
 
 def main():
+
+    run_id = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
+    dataset_path = "roneneldan/TinyStories"
+    model_path = "roneneldan/TinyStories-1M"
+    output_path = f"results/{model_path}/pt"
+    tokenized_datapath = os.path.join("data", dataset_path, "tokenized_dataset")
+
+    os.makedirs(output_path, exist_ok=True)
 
     config = AutoConfig.from_pretrained(model_path, trust_remote_code=True)
     model = AutoModelForCausalLM.from_config(
@@ -43,6 +45,9 @@ def main():
         # attn_implementation="flash_attention_2",
         trust_remote_code=True,
     )
+    # Disable cache since we are use gradient checkpoints
+    model.config.use_cache = False
+
     tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True)
     tokenizer.pad_token = tokenizer.eos_token
     tokenizer.pad_token_id = tokenizer.eos_token_id
@@ -59,14 +64,13 @@ def main():
         per_device_train_batch_size=16,
         per_device_eval_batch_size=16,
         gradient_accumulation_steps=16,
-        save_steps=10_000,
+        save_steps=1000,
         save_total_limit=3,
         gradient_checkpointing=True,
         bf16=True,
         max_grad_norm=1,  # clip gradient at max 1
         eval_strategy="steps",
-        eval_steps=10_000,
-        do_eval=True,
+        eval_steps=1000,
         logging_steps=10,
         report_to="wandb",
         remove_unused_columns=False,
@@ -82,8 +86,8 @@ def main():
     if local_rank == 0:
         wandb.login()
         wandb.init(
-            project="hands-on-llm-pt",
-            name=f"{model_path.replace("/","-")}-pt",
+            project=f"hands-on-llm-pretrain-{model_path.replace("/", "-")}",
+            id=run_id,
             config=training_args.to_dict(),
         )
     else:
@@ -136,6 +140,7 @@ def main():
     trainer.train()
     trainer.save_model()
     tokenizer.save_pretrained(output_path)
+    wandb.save(output_path)
 
 
 if __name__ == "__main__":
