@@ -42,7 +42,7 @@ def main():
         config,
         torch_dtype=torch.bfloat16,
         # https://huggingface.co/docs/transformers/perf_infer_gpu_one
-        # attn_implementation="flash_attention_2",
+        attn_implementation="flash_attention_2",
         trust_remote_code=True,
     )
     # Disable cache since we are use gradient checkpoints
@@ -55,25 +55,30 @@ def main():
     collator = DataCollatorForLanguageModeling(tokenizer=tokenizer, mlm=False)
 
     training_args = TrainingArguments(
+        run_name=run_id,
         output_dir=output_path,
         overwrite_output_dir=True,
         learning_rate=1e-5,
         warmup_ratio=0.1,
         lr_scheduler_type="cosine",
         num_train_epochs=3,
-        per_device_train_batch_size=16,
-        per_device_eval_batch_size=16,
-        gradient_accumulation_steps=16,
-        save_steps=1000,
+        per_device_train_batch_size=64,
+        per_device_eval_batch_size=64,
+        gradient_accumulation_steps=8,
+        save_steps=0.2,
         save_total_limit=3,
         gradient_checkpointing=True,
         bf16=True,
         max_grad_norm=1,  # clip gradient at max 1
         eval_strategy="steps",
-        eval_steps=1000,
+        eval_steps=0.1,
         logging_steps=10,
         report_to="wandb",
         remove_unused_columns=False,
+        # additional metrics
+        include_for_metrics=['input','loss'],
+        include_tokens_per_second=True,
+        include_num_input_tokens_seen=True,
     )
 
     # Ensure W&B is only initialized on rank 0
