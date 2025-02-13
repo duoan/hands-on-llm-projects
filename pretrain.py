@@ -58,13 +58,15 @@ def main():
         run_name=run_id,
         output_dir=output_path,
         overwrite_output_dir=True,
+        # fused kernel optimization
+        optim='adamw_torch_fused',
         learning_rate=1e-5,
         warmup_ratio=0.1,
         lr_scheduler_type="cosine",
         num_train_epochs=3,
         per_device_train_batch_size=64,
         per_device_eval_batch_size=64,
-        gradient_accumulation_steps=8,
+        gradient_accumulation_steps=4,
         save_steps=0.2,
         save_total_limit=3,
         gradient_checkpointing=True,
@@ -76,8 +78,6 @@ def main():
         report_to="wandb",
         remove_unused_columns=False,
         # additional metrics
-        include_for_metrics=['input','loss'],
-        include_tokens_per_second=True,
         include_num_input_tokens_seen=True,
     )
 
