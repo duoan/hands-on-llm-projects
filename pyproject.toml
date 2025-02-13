@@ -1,0 +1,17 @@
+[project]
+name = "hands-on-llm-projects"
+version = "0.1.0"
+description = "Hands-on Large Language Model Projects"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "accelerate>=1.3.0",
+    "datasets>=3.2.0",
+    "huggingface-hub>=0.28.1",
+    "peft>=0.14.0",
+    "torch>=2.6.0",
+    "tqdm>=4.67.1",
+    "transformers[torch]>=4.48.3",
+    "trl>=0.14.0",
+    "wandb>=0.19.6",
+]
