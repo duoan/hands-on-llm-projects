@@ -10,6 +10,7 @@ dependencies = [
     "deepspeed>=0.16.3",
     "huggingface-hub>=0.28.1",
     "peft>=0.14.0",
+    "ruff>=0.9.6",
     "torch>=2.6.0",
     "tqdm>=4.67.1",
     "transformers[torch]>=4.48.3",
