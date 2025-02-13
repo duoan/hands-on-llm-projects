@@ -12,6 +12,7 @@ You are free to use any dataset and pre-trained model
 
 import os
 import torch
+import torch.distributed as dist
 from itertools import chain
 from datasets import load_dataset, DatasetDict
 import wandb
@@ -24,9 +25,10 @@ from transformers import (
     TrainingArguments,
 )
 
-output_path = "results/pt"
+dataset_path = "roneneldan/TinyStories"
 model_path = "roneneldan/TinyStories-1M"
-tokenized_datapath = os.path.join("data", "tokenized_dataset")
+output_path = f"results/${model_path}/pt"
+tokenized_datapath = os.path.join("data", model_path, "tokenized_dataset")
 
 
 def main():
@@ -68,8 +70,22 @@ def main():
         remove_unused_columns=False,
     )
 
-    wandb.login()
-    wandb.init(project="qwen-0.5B-pt", name="qwen-0.5B-pt")
+    # Ensure W&B is only initialized on rank 0
+    if dist.is_initialized():
+        local_rank = dist.get_rank()
+    else:
+        local_rank = 0  # Assume single-GPU or non-distributed mode
+
+    # Initialize W&B only on the primary process
+    if local_rank == 0:
+        wandb.login()
+        wandb.init(
+            project="hands-on-llm-pt",
+            name=f"{model_path.replace("/","-")}-pt",
+            config=training_args.to_dict(),
+        )
+    else:
+        os.environ["WANDB_MODE"] = "offline"
 
     # process dataset
     def map_callback(examples):
@@ -94,7 +110,7 @@ def main():
 
     if not os.path.exists(tokenized_datapath):
         dataset = load_dataset(
-            "roneneldan/TinyStories",
+            dataset_path,
             trust_remote_code=True,
         ).map(
             map_callback,
