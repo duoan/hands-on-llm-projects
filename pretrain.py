@@ -27,7 +27,7 @@ from transformers import (
 
 dataset_path = "roneneldan/TinyStories"
 model_path = "roneneldan/TinyStories-1M"
-output_path = f"results/${model_path}/pt"
+output_path = f"results/{model_path}/pt"
 tokenized_datapath = os.path.join("data", dataset_path, "tokenized_dataset")
 
 os.makedirs(output_path, exist_ok=True)
