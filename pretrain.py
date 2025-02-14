@@ -51,12 +51,7 @@ class TextGenerationCallback(TrainerCallback):
 
         generated_text = self.tokenizer.decode(output[0], skip_special_tokens=True)
         print(f"\n[Step {state.global_step}] Generated Text: {generated_text}\n")
-
-        # Log to Weights & Biases if enabled
-        if self.log_to_wandb:
-            import wandb
-            wandb.log({"Generated Text": generated_text}, step=state.global_step)
-
+        
         model.train()  # Switch back to training mode
 
 
