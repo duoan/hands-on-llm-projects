@@ -55,7 +55,7 @@ class TextGenerationCallback(TrainerCallback):
         model.train()  # Switch back to training mode
 
 
-class GradientMonitorCallback(TrainerCallback):
+class ParameterMonitorCallback(TrainerCallback):
     """
     A callback for monitoring parameter gradient norms during training in Hugging Face Transformers.
     Logs gradient norms to Weights & Biases (wandb).
@@ -89,7 +89,6 @@ class GradientMonitorCallback(TrainerCallback):
 def main():
     run_id = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
     dataset_path = "roneneldan/TinyStories"
-    
     # https://huggingface.co/docs/transformers/en/model_doc/qwen2
     model_path = "Qwen/Qwen2.5-0.5B"
     tokenizer_path = "roneneldan/TinyStories-1M"
@@ -97,6 +96,23 @@ def main():
     tokenized_datapath = os.path.join("data", dataset_path, "tokenized_dataset")
 
     os.makedirs(output_path, exist_ok=True)
+    
+    # Ensure W&B is only initialized on rank 0
+    if dist.is_initialized():
+        local_rank = dist.get_rank()
+    else:
+        local_rank = 0  # Assume single-GPU or non-distributed mode
+
+    # Initialize W&B only on the primary process
+    if local_rank == 0:
+        wandb.login()
+        wandb.init(
+            project=f"hands-on-llm-pretrain-{model_path.replace("/", "-")}",
+            id=run_id,
+            config=training_args.to_dict(),
+        )
+    else:
+        os.environ["WANDB_MODE"] = "offline"
     
     # Use the tokenizer from the pre-trained model
     tokenizer = AutoTokenizer.from_pretrained(tokenizer_path, trust_remote_code=True)
@@ -130,8 +146,7 @@ def main():
     print(f"Total Trainable Parameters: {trainable_params:,}")  # Format with commas
     # Count total parameters (trainable + frozen)
     total_params = sum(p.numel() for p in model.parameters())
-    print(f"Total Parameters (Trainable + Frozen): {total_params:,}")
-    
+    print(f"Total Parameters (Trainable + Frozen): {total_params:,}") 
 
     training_args = TrainingArguments(
         run_name=run_id,
@@ -161,22 +176,7 @@ def main():
         include_num_input_tokens_seen=True,
     )
 
-    # Ensure W&B is only initialized on rank 0
-    if dist.is_initialized():
-        local_rank = dist.get_rank()
-    else:
-        local_rank = 0  # Assume single-GPU or non-distributed mode
-
-    # Initialize W&B only on the primary process
-    if local_rank == 0:
-        wandb.login()
-        wandb.init(
-            project=f"hands-on-llm-pretrain-{model_path.replace("/", "-")}",
-            id=run_id,
-            config=training_args.to_dict(),
-        )
-    else:
-        os.environ["WANDB_MODE"] = "offline"
+    
 
     # process dataset
     def map_callback(examples):
@@ -224,7 +224,7 @@ def main():
         callbacks=[
             EarlyStoppingCallback(early_stopping_patience=5, early_stopping_threshold=0.1),
             TextGenerationCallback(tokenizer, prompt="A long time ago"),
-            GradientMonitorCallback(),
+            ParameterMonitorCallback(),
         ],
     )
     
