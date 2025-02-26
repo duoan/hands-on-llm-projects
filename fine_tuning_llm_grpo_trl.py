@@ -3,6 +3,7 @@ import re
 from dataclasses import dataclass
 from datetime import datetime, timezone
 
+import numpy as np
 import torch
 from datasets import load_dataset
 from math_verify import LatexExtractionConfig, parse, verify
@@ -117,9 +118,9 @@ model = AutoModelForCausalLM.from_pretrained(
 # enabling faster and more resource-efficient training.
 lora_config = LoraConfig(
     task_type="CAUSAL_LM",
-    r=8,
+    r=16,
     lora_alpha=32,
-    lora_dropout=0.1,
+    lora_dropout=0.05,
     target_modules=["q_proj", "v_proj"],
 )
 
@@ -179,25 +180,26 @@ training_args = GRPOConfig(
     output_dir=job_config.output_dir,
     learning_rate=1e-5,
     remove_unused_columns=False,  # to access the solution column in accuracy_reward
-    per_device_train_batch_size=4,
-    gradient_accumulation_steps=4,
-    num_train_epochs=1,
+    per_device_train_batch_size=2,
+    gradient_accumulation_steps=1,
+    num_train_epochs=10,
     bf16=True,
     # Parameters that control de data preprocessing
-    max_completion_length=64,  # default: 256
-    num_generations=4,  # default: 8
-    max_prompt_length=128,  # default: 512
+    max_completion_length=128,  # default: 256
+    num_generations=2,  # default: 8
+    max_prompt_length=256,  # default: 512
     # Parameters related to reporting and saving
     report_to=["wandb"],
     logging_steps=10,
     push_to_hub=True,
     save_strategy="steps",
     save_steps=10,
+    save_total_limit=2,
 )
 
 ## Training the Model
-
-test_prompt = test_dataset["prompt"][0]
+test_prompt_idx = np.random.randint(0, len(test_dataset))
+test_prompt = test_dataset["prompt"][test_prompt_idx]
 test_prompt = " ".join(entry["content"] for entry in test_prompt)
 trainer = GRPOTrainer(
     model=model,
