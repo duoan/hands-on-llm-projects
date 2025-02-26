@@ -1,15 +1,16 @@
 import argparse
+import logging
+
 import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
-import logging
 
 logging.getLogger("transformers").setLevel(logging.ERROR)
 
-parser = argparse.ArgumentParser(description='Chat with LLM')
+parser = argparse.ArgumentParser(description="Chat with LLM")
 parser.add_argument(
     "--model_path",
     type=str,
-    default='roneneldan/TinyStories-1M',
+    default="roneneldan/TinyStories-1M",
     help="Pretrained model name or path",
 )
 

@@ -3,6 +3,7 @@
 | project  | description                                  | code link                    |
 | -------- | -------------------------------------------- | ---------------------------- |
 | pretrain | Pretrain a LLM with using opensource dataset | [pretrain.py](./pretrain.py) |
+| pretrain | Fine tuning LLM enable Chain of Thought with GRPO | [pretrain.py](./fine_tuning_llm_grpo_trl.py) |
 
 
 
@@ -18,6 +19,7 @@ source .venv/bin/activate
 uv pip install flash-attn --no-build-isolation
 
 ```
+---
 
 ## Pretrain
 
@@ -91,3 +93,25 @@ accelerate launch --config-file accelerate_config.yaml pretrain.py
 [Step 50500] Generated Text: A long time ago, there was a little girl named Lily. She loved to play outside in the sun. One day, she went to the park with her mom and saw a big tree with a swing hanging from it. She wanted to swing on it too. Lily's mom said, "Be careful, Lily. The swing is very high and you might fall." Lily nodded and ran to the swing. She sat on the swing and pushed herself. She felt the wind in her
 
 ```
+----
+
+## Fine Tuning - Chain of Thought
+I fine tune `Qwen/Qwen2-0.5B-Instruct` model with `AI-MO/NuminaMath-TIR` dataset.
+
+![](./images/grpo.png)
+
+```
+618 [Step 1120] Generated Reasoning: A conversation between User and Assistant.The user asks a question, and the Assistant solves it.The assistant first thinks about the reasoning process in the mind step by step and then provides the user with the answer.The reasoning process and answer are must strictly enclosed within <think> </think> and <answer> </answer> tags, respectively, i.e., <think> reasoning process here </think><answer> answer here </answer> In 1988, a person's age was equal to the sum of the digits of their birth year. How old was this person?<think> The sum of the digits of my birth year is equal to my age.</think> <answer>35</answer>
+619 
+620 The sum of the digits of my birth year is equal to my age.
+621 
+622 {'loss': 0.0192, 'grad_norm': 0.40944114327430725, 'learning_rate': 8.849557522123894e-08, 'completion_length': 29.990625, 'rewards/format_reward': 0.7390625, 'rewards/accuracy_reward': 0.0140625, 'reward': 0.753125, 'reward_std': 0.1367921955883503, 'kl': 0.48006264908472074, 'epoch': 4.94}
+623 
+624 [Step 1130] Generated Reasoning: A conversation between User and Assistant.The user asks a question, and the Assistant solves it.The assistant first thinks about the reasoning process in the mind step by step and then provides the user with the answer.The reasoning process and answer are must strictly enclosed within <think> </think> and <answer> </answer> tags, respectively, i.e., <think> reasoning process here </think><answer> answer here </answer> In 1988, a person's age was equal to the sum of the digits of their birth year. How old was this person?< <think> reasoning process here </think> <answer>25</answer> </answer>
+625 
+626 {'loss': 0.0199, 'grad_norm': 0.6182273030281067, 'learning_rate': 0.0, 'completion_length': 25.715625, 'rewards/format_reward': 0.8359375, 'rewards/accuracy_reward': 0.009375, 'reward': 0.8453125, 'reward_std': 0.1306655988097191, 'kl': 0.4982221235317411, 'epoch': 4.98}
+627 {'train_runtime': 27084.6487, 'train_samples_per_second': 0.669, 'train_steps_per_second': 0.042, 'train_loss': 0.01459620625815515, 'epoch': 4.98}
+```
+
+> the training result is not good, since I only trained 5 hours with small GPU instance. But you can see the model trying to follow the required format response.
+---

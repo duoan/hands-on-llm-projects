@@ -9,6 +9,7 @@ dependencies = [
     "datasets>=3.2.0",
     "deepspeed>=0.16.3",
     "huggingface-hub>=0.28.1",
+    "math-verify>=0.5.2",
     "peft>=0.14.0",
     "ruff>=0.9.6",
     "torch>=2.6.0",
