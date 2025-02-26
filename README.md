@@ -3,7 +3,7 @@
 | project  | description                                  | code link                    |
 | -------- | -------------------------------------------- | ---------------------------- |
 | pretrain | Pretrain a LLM with using opensource dataset | [pretrain.py](./pretrain.py) |
-| pretrain | Fine tuning LLM enable Chain of Thought with GRPO | [pretrain.py](./fine_tuning_llm_grpo_trl.py) |
+| pretrain | Fine tuning LLM enable Chain of Thought with GRPO | [fine_tuning_llm_grpo_trl.py](./fine_tuning_llm_grpo_trl.py) |
 
 
 
