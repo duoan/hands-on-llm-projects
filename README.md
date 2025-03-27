@@ -115,3 +115,37 @@ I fine tune `Qwen/Qwen2-0.5B-Instruct` model with `AI-MO/NuminaMath-TIR` dataset
 
 > the training result is not good, since I only trained 5 hours with small GPU instance. But you can see the model trying to follow the required format response.
 ---
+
+## Implement CLIP from scratch
+I implemented a CLIP model with ViTModel as visual encoder, Bert as text encoder. The model is trained with CIFAR10 dataset.
+The key functions as the following.
+
+```python
+def encode_image(self, pixel_values: torch.Tensor) -> torch.Tensor:
+    image_features = self.image_encoder(pixel_values).last_hidden_state[:, 0, :]
+    image_features = self.image_projection(image_features)
+    return F.normalize(image_features, dim=-1)
+
+def encode_text(self, input_ids: torch.Tensor, attention_mask: torch.Tensor) -> torch.Tensor:
+    text_features = self.text_encoder(input_ids, attention_mask).last_hidden_state[:, 0, :]
+    text_features = self.text_projection(text_features)
+    return F.normalize(text_features, dim=-1)
+
+def forward(self, batch):
+    # extract the image and text features
+    image_features = self.encode_image(batch['pixel_values'])
+    text_features = self.encode_text(batch['input_ids'], batch['attention_mask'])
+
+    # calculate the similarity of image and text
+    logits = torch.matmul(image_features, text_features.T) / TEMPERATURE
+
+    # create labels
+    labels = torch.arange(len(logits), device=logits.device)
+
+    # calculate the double loss
+    loss_i2t = F.cross_entropy(logits, labels, label_smoothing=0.1)
+    loss_t2i = F.cross_entropy(logits.T, labels, label_smoothing=0.1)
+
+    return (loss_i2t + loss_t2i) / 2
+
+```
